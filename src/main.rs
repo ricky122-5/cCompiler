@@ -5,8 +5,28 @@ fn main() {
 }"));
     println!("{:?}", res);
 }
+#[derive(Debug, PartialEq)]
 
-fn lex(input: &String) -> Vec<String> {
+enum TokenType {
+    OpenBracket, 
+    ClosedBracket,
+    OpenParanthesis,
+    ClosedParanthesis,
+    Semicolon,
+    IntKeyword,
+    ReturnKeyword,
+    Identifier,
+    IntegerLiteral,
+    Unknown
+}
+
+#[derive(Debug)]
+struct Token {
+    token_type: TokenType,
+    value: String
+}
+
+fn lex(input: &String) -> Vec<Token> {
 
     // Regex for open bracket
     let open_bracket = Regex::new(r"\{").unwrap();
@@ -44,14 +64,17 @@ fn lex(input: &String) -> Vec<String> {
             continue;
         }
 
-        let mut best_match: Option<&str> = None;
+        let mut best_match: Option<Token> = None;
         let mut best_length = 0;
 
 
         if let Some(match_result) = open_bracket.find_at(input, c) {
             if match_result.start() == c && match_result.len() > best_length {
-                // Match at current val, push
-                best_match = Some(match_result.as_str());
+                // Current char is open bracket
+                best_match = Some(Token {
+                    token_type: TokenType::OpenBracket,
+                    value: match_result.as_str().to_string()
+                });
                 best_length = match_result.len();
             }
         }
@@ -59,7 +82,10 @@ fn lex(input: &String) -> Vec<String> {
         if let Some(match_result) = closed_bracket.find_at(input, c) {
             if match_result.start() == c && match_result.len() > best_length {
                 // Match at current val, push
-                best_match = Some(match_result.as_str());
+                best_match = Some(Token {
+                    token_type: TokenType::ClosedBracket,
+                    value: match_result.as_str().to_string()
+                });
                 best_length = match_result.len();
             }
         }
@@ -67,7 +93,10 @@ fn lex(input: &String) -> Vec<String> {
         if let Some(match_result) = open_paranthesis.find_at(input, c) {
             if match_result.start() == c && match_result.len() > best_length {
                 // Match at current val, push
-                best_match = Some(match_result.as_str());
+                best_match = Some(Token {
+                    token_type: TokenType::OpenParanthesis,
+                    value: match_result.as_str().to_string()
+                });
                 best_length = match_result.len();
             }
         }
@@ -75,7 +104,10 @@ fn lex(input: &String) -> Vec<String> {
         if let Some(match_result) = closed_paranthesis.find_at(input, c) {
             if match_result.start() == c && match_result.len() > best_length {
                 // Match at current val, push
-                best_match = Some(match_result.as_str());
+                best_match = Some(Token {
+                    token_type: TokenType::ClosedParanthesis,
+                    value: match_result.as_str().to_string()
+                });
                 best_length = match_result.len();
             }
         }
@@ -83,7 +115,10 @@ fn lex(input: &String) -> Vec<String> {
         if let Some(match_result) = semicolon.find_at(input, c) {
             if match_result.start() == c && match_result.len() > best_length {
                 // Match at current val, push
-                best_match = Some(match_result.as_str());
+                best_match = Some(Token {
+                    token_type: TokenType::Semicolon,
+                    value: match_result.as_str().to_string()
+                });
                 best_length = match_result.len();
             }
         }
@@ -91,7 +126,10 @@ fn lex(input: &String) -> Vec<String> {
         if let Some(match_result) = int_keyword.find_at(input, c) {
             if match_result.start() == c && match_result.len() > best_length {
                 // Match at current val, push
-                best_match = Some(match_result.as_str());
+                best_match = Some(Token {
+                    token_type: TokenType::IntKeyword,
+                    value: match_result.as_str().to_string()
+                });
                 best_length = match_result.len();
             }
         }
@@ -99,7 +137,10 @@ fn lex(input: &String) -> Vec<String> {
         if let Some(match_result) = return_keyword.find_at(input, c) {
             if match_result.start() == c && match_result.len() > best_length {
                 // Match at current val, push
-                best_match = Some(match_result.as_str());
+                best_match = Some(Token {
+                    token_type: TokenType::ReturnKeyword,
+                    value: match_result.as_str().to_string()
+                });
                 best_length = match_result.len();
             }
         }
@@ -107,7 +148,10 @@ fn lex(input: &String) -> Vec<String> {
         if let Some(match_result) = identifier.find_at(input, c) {
             if match_result.start() == c && match_result.len() > best_length {
                 // Match at current val, push
-                best_match = Some(match_result.as_str());
+                best_match = Some(Token {
+                    token_type: TokenType::Identifier,
+                    value: match_result.as_str().to_string()
+                });
                 best_length = match_result.len();
             }
         }
@@ -115,19 +159,23 @@ fn lex(input: &String) -> Vec<String> {
         if let Some(match_result) = integer_literal.find_at(input, c) {
             if match_result.start() == c && match_result.len() > best_length {
                 // Match at current val, push
-                best_match = Some(match_result.as_str());
+                best_match = Some(Token {
+                    token_type: TokenType::IntegerLiteral,
+                    value: match_result.as_str().to_string()
+                });
                 best_length = match_result.len();
             }
         }
 
         // Push final value, check if invalid
         if let Some(token) = best_match {
-            tokens.push(token.to_string());
+            tokens.push(token);
             c += best_length;
         } else {
             // invalid char
             // we still want to parse it
-            tokens.push(input.chars().nth(c).unwrap().to_string());
+
+            tokens.push(Token { token_type: TokenType::Unknown, value: input.chars().nth(c).unwrap().to_string()});
             c += 1;
         }
     }
