@@ -4,6 +4,8 @@ fn main() {
     return 2;
 }"));
     println!("{:?}", res);
+    let AST = parse(&res);
+    println!("{:?}", AST);
 }
 #[derive(Debug, PartialEq)]
 
@@ -173,7 +175,7 @@ fn lex(input: &String) -> Vec<Token> {
             c += best_length;
         } else {
             // invalid char
-            // we still want to parse it
+            // we still want to lex it
 
             tokens.push(Token { token_type: TokenType::Unknown, value: input.chars().nth(c).unwrap().to_string()});
             c += 1;
@@ -182,5 +184,84 @@ fn lex(input: &String) -> Vec<Token> {
 
     return tokens;
 
+}
+
+#[derive(Debug)]
+struct Program {
+    function_declaration: Function
+}
+
+#[derive(Debug)]
+struct Function {
+    function_name: String,
+    statement: Return
+}
+
+#[derive(Debug)]
+struct Return {
+    expression: Constant
+}
+
+#[derive(Debug)]
+struct Constant {
+    value: i32
+}
+
+
+
+fn parse(tokens: &Vec<Token>) -> Program {
+    let mut pos = 0;
+    let func_name: String;
+    
+    if tokens[pos].token_type != TokenType::IntKeyword {
+        fail();
+    }
+    pos += 1;
+    if tokens[pos].token_type != TokenType::Identifier {
+        fail();
+    }
+    func_name = tokens[pos].value.to_string();
+    pos += 1;
+    if tokens[pos].token_type != TokenType::OpenParanthesis {
+        fail();
+    }
+    pos += 1;
+    if tokens[pos].token_type != TokenType::ClosedParanthesis {
+        fail();
+    }
+    pos += 1;
+    if tokens[pos].token_type != TokenType::OpenBracket {
+        fail();
+    }
+    pos += 1;
+    let stmt = parse_statement(tokens, &mut pos);
+
+    if tokens[pos].token_type != TokenType::ClosedBracket {
+        fail();
+    }
+
+    return Program { function_declaration: Function { function_name: func_name, statement: stmt } }
+    
+}
+
+fn fail() {
+    panic!("Invalid token.")
+}
+
+fn parse_statement(tokens: &Vec<Token>, pos: &mut usize) -> Return {
+    if tokens[*pos].token_type != TokenType::ReturnKeyword {
+        fail();
+    }
+    *pos += 1;
+    if tokens[*pos].token_type != TokenType::IntegerLiteral {
+        fail();
+    }
+    let constant = Constant {value: Result::expect(tokens[*pos].value.parse(), r"Constant was not a i32 value!")};
+    *pos += 1;
+    if tokens[*pos].token_type != TokenType::Semicolon {
+        fail();
+    }
+    *pos += 1;
+    return Return { expression: constant }
 }
 
