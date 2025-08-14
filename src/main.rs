@@ -10,7 +10,9 @@ fn main() {
     let AST = parse(&res);
     println!("{:?}", AST);
 
-    generate(AST);
+    generate(&AST);
+
+    pretty_print_ast(&AST);
 }
 #[derive(Debug, PartialEq)]
 
@@ -271,26 +273,40 @@ fn parse_statement(tokens: &Vec<Token>, pos: &mut usize) -> Return {
 }
 
 
-fn generate(ast: Program) {
+fn generate(ast: &Program) {
     let mut file = File::create("output.s").expect("couldn't create file");
     generate_function(&ast.function_declaration, &mut file);
 }
 
 fn generate_function(function: &Function, file: &mut File) {
-    writeln!(file, ".section __TEXT,__text,regular,pure_instructions");
-    writeln!(file, ".globl  _{}", function.function_name);
-    writeln!(file, ".p2align 2");
-    writeln!(file, "_{}:", function.function_name);
+    writeln!(file, ".section __TEXT,__text,regular,pure_instructions").expect("Error writing");
+    writeln!(file, ".globl  _{}", function.function_name).expect("Error writing .globl");
+    writeln!(file, ".p2align 2").expect("err writing p2align");
+    writeln!(file, "_{}:", function.function_name).expect("error writing func name");
     generate_return(&function.statement, file);
 }
 
 fn generate_return(ret: &Return, file: &mut File) {
     let value = generate_constant(&ret.expression);
-    writeln!(file, "    mov     w0, #{}", value);
-    writeln!(file, "    ret");
+    writeln!(file, "    mov     w0, #{}", value).expect("Error with writing mov");
+    writeln!(file, "    ret").expect("Error with writing ret");
 }
 
 fn generate_constant(constant: &Constant) -> i32 {
     return constant.value;
+}
+
+fn pretty_print_ast(ast: &Program) {
+    println!("Program");
+    pretty_print_function(&ast.function_declaration);
+}
+
+fn pretty_print_function(func: &Function) {
+    println!("FUN {}", func.function_name);
+    pretty_print_statement(&func.statement);
+}
+
+fn pretty_print_statement(ret: &Return) {
+    println!("  return {}", ret.expression.value)
 }
 
