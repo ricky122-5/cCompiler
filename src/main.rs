@@ -277,15 +277,17 @@ fn generate(ast: Program) {
 }
 
 fn generate_function(function: &Function, file: &mut File) {
-    writeln!(file, " .globl _{}", function.function_name);
+    writeln!(file, ".section __TEXT,__text,regular,pure_instructions");
+    writeln!(file, ".globl  _{}", function.function_name);
+    writeln!(file, ".p2align 2");
     writeln!(file, "_{}:", function.function_name);
     generate_return(&function.statement, file);
 }
 
 fn generate_return(ret: &Return, file: &mut File) {
     let value = generate_constant(&ret.expression);
-    writeln!(file, " movl    ${}, %eax", value);
-    writeln!(file, " ret");
+    writeln!(file, "    mov     w0, #{}", value);
+    writeln!(file, "    ret");
 }
 
 fn generate_constant(constant: &Constant) -> i32 {
