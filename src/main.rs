@@ -1,4 +1,7 @@
 use regex::Regex;
+use std::fs::File;
+use std::io::Write;
+
 fn main() {
     let res = lex(&String::from("int main() {
     return 2;
@@ -6,6 +9,8 @@ fn main() {
     println!("{:?}", res);
     let AST = parse(&res);
     println!("{:?}", AST);
+
+    generate(AST);
 }
 #[derive(Debug, PartialEq)]
 
@@ -263,5 +268,27 @@ fn parse_statement(tokens: &Vec<Token>, pos: &mut usize) -> Return {
     }
     *pos += 1;
     return Return { expression: constant }
+}
+
+
+fn generate(ast: Program) {
+    let mut file = File::create("output.s").expect("couldn't create file");
+    generate_function(&ast.function_declaration, &mut file);
+}
+
+fn generate_function(function: &Function, file: &mut File) {
+    writeln!(file, " .globl _{}", function.function_name);
+    writeln!(file, "_{}:", function.function_name);
+    generate_return(&function.statement, file);
+}
+
+fn generate_return(ret: &Return, file: &mut File) {
+    let value = generate_constant(&ret.expression);
+    writeln!(file, " movl    ${}, %eax", value);
+    writeln!(file, " ret");
+}
+
+fn generate_constant(constant: &Constant) -> i32 {
+    return constant.value;
 }
 
